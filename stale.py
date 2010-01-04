@@ -15,10 +15,7 @@ import urllib
 def main():
     from optparse import OptionParser
 
-    usage = "usage: %prog [options] [query]"
-    version = "%prog " + __version__
-
-    parser = OptionParser(usage=usage, version=version, description=__doc__)
+    parser = OptionParser(version="%prog " + __version__, description=__doc__)
     parser.add_option('-u', dest='username', help="Delicious username")
     parser.add_option('-p', dest='password', help="Delicious password")
     parser.add_option('-d', action='store_true', dest='delete',
