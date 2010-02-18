@@ -20,6 +20,8 @@ def main():
     parser.add_option('-p', dest='password', help="Delicious password")
     parser.add_option('-d', action='store_true', dest='delete',
             help="delete stale links", default=False)
+    parser.add_option('-e', action='store_true', dest='errors',
+            help="equate errors with staleness", default=False)
     parser.add_option('-v', action='store_true', dest='verbose',
             help="enable verbose output", default=False)
 
@@ -62,9 +64,11 @@ def main():
 
         try:
             url = urllib.urlopen(href)
-        except IOError:
+        except IOError as e:
             print "[Err] %s" % href
-            stale = True
+            print "  %s" % e
+            if options.errors:
+                stale = True
         else:
             if url.getcode() != 200:
                 stale = True
