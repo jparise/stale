@@ -10,7 +10,7 @@ setup(
     description="Identifies (and optionally removes) stale Delicious links",
     author="Jon Parise",
     author_email="jon@indelible.org",
-    url="http://bitbucket.org/jparise/stale/",
+    url="https://github.com/jparise/stale",
     scripts = ['stale.py'],
     license = "MIT License",
     classifiers = ['License :: OSI Approved :: MIT License',
