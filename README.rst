@@ -28,7 +28,7 @@ Usage
 
     Usage: stale.py [options]
 
-    Identify (and optionally delete) stale Delicious links
+    Identify (and optionally delete) stale Delicious and Pinboard links
 
     Options:
     --version    show program's version number and exit
