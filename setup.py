@@ -7,7 +7,7 @@ version = __import__('stale').__version__
 setup(
     name="stale",
     version=version,
-    description="Identifies (and optionally removes) stale Delicious links",
+    description="Identifies (and optionally removes) stale Delicious and Pinboard links",
     author="Jon Parise",
     author_email="jon@indelible.org",
     url="https://github.com/jparise/stale",

@@ -20,21 +20,74 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-"""Identify (and optionally delete) stale Delicious links"""
+"""Identify (and optionally delete) stale Delicious and Pinboard links"""
 
 __author__ = 'Jon Parise <jon@indelible.org>'
-__version__ = '1.0'
+__version__ = '1.1'
 
 import pydelicious
 import sys
 import urllib
 
+PINBOARD_API_HOST = 'api.pinboard.in'
+PINBOARD_API_PATH = 'v1'
+PINBOARD_API_REALM = 'API'
+PINBOARD_API = "https://%s/%s" % (PINBOARD_API_HOST, PINBOARD_API_PATH)
+
+def pinboard_api_opener(user, passwd):
+    import urllib2
+
+    manager = urllib2.HTTPPasswordMgr()
+    manager.add_password(PINBOARD_API_REALM, PINBOARD_API_HOST, user, passwd)
+    auth_handler = urllib2.HTTPBasicAuthHandler(manager)
+
+    handlers = (auth_handler, pydelicious.DeliciousHTTPErrorHandler())
+
+    if pydelicious.DEBUG:
+        httpdebug = urllib2.HTTPHandler(debuglevel=DEBUG)
+        handlers += (httpdebug,)
+
+    if pydelicious.HTTP_PROXY or pydelicious.HTTPS_PROXY:
+        proto = {}
+        if pydelicious.HTTPS_PROXY:
+            proto['https'] = pydelicious.HTTPS_PROXY
+        if pydelicious.HTTP_PROXY:
+            proto['http'] = pydelicious.HTTP_PROXY
+        handlers += (urllib2.ProxyHandler( proto ),)
+
+    return urllib2.build_opener(*handlers)
+
+def pinboard_api_request(path, params=None, user='', passwd='', throttle=True,
+        opener=None):
+    if throttle:
+        pydelicious.Waiter()
+
+    if params:
+        url = "%s/%s?%s" % (PINBOARD_API, path, urllib.urlencode(params))
+    else:
+        url = "%s/%s" % (PINBOARD_API, path)
+
+    if pydelicious.DEBUG: print >>sys.stderr, \
+            "pinboard_api_request: %s" % url
+
+    if not opener:
+        opener = pinboard_api_opener(user, passwd)
+
+    fl = pydelicious.http_request(url, opener=opener)
+
+    if pydelicious.DEBUG>2: print >>sys.stderr, \
+            pydelicious.pformat(fl.info().headers)
+
+    return fl
+
 def main():
     from optparse import OptionParser
 
     parser = OptionParser(version="%prog " + __version__, description=__doc__)
-    parser.add_option('-u', dest='username', help="Delicious username")
-    parser.add_option('-p', dest='password', help="Delicious password")
+    parser.add_option('-u', dest='username', help="Delicious/Pinboard username")
+    parser.add_option('-p', dest='password', help="Delicious/Pinboard password")
+    parser.add_option('-i', action='store_true', dest='pinboard',
+            help="use Pinboard instead of Delicious", default=False)
     parser.add_option('-d', action='store_true', dest='delete',
             help="delete stale links", default=False)
     parser.add_option('-e', action='store_true', dest='errors',
@@ -56,8 +109,16 @@ def main():
         print "A username and password must be provided"
         sys.exit(1)
 
+    # Select the appropriate API handler functions for the chosen service.
+    api_request = pydelicious.dlcs_api_request
+    api_opener = pydelicious.dlcs_api_opener
+    if options.pinboard:
+        api_request = pinboard_api_request
+        api_opener = pinboard_api_opener
+
     # Construct the Delicious API object.
-    api = pydelicious.DeliciousAPI(options.username, options.password)
+    api = pydelicious.DeliciousAPI(options.username, options.password,
+            api_request=api_request, build_opener=api_opener)
 
     if options.verbose:
         print "Retrieving all posts for %s" % options.username
@@ -73,7 +134,7 @@ def main():
         sys.exit(1)
 
     if options.verbose:
-        print "Checking %s posts ..." % result['total']
+        print "Checking %s posts ..." % len(result['posts'])
 
     for post in result['posts']:
         href = post['href']
