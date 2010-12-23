@@ -80,6 +80,12 @@ def pinboard_api_request(path, params=None, user='', passwd='', throttle=True,
 
     return fl
 
+def sanitize_url(url):
+    hash_position = url.find('#')
+    if hash_position != -1:
+        return url[0:hash_position]
+    return url
+
 def main():
     from optparse import OptionParser
 
@@ -141,7 +147,7 @@ def main():
         stale = False
 
         try:
-            url = urllib.urlopen(href)
+            url = urllib.urlopen(sanitize_url(href))
         except IOError as e:
             print "[Err] %s" % href
             print "  %s" % e
