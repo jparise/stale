@@ -127,7 +127,8 @@ def main():
             api_request=api_request, build_opener=api_opener)
 
     if options.verbose:
-        print "Retrieving all posts for %s" % options.username
+        service = 'Pinboard' if options.pinboard else 'Delicious'
+        print "Retrieving all %s posts for %s" % (service, options.username)
 
     try:
         result = api.posts_all()
