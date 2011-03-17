@@ -29,10 +29,17 @@ import pydelicious
 import sys
 import urllib
 
+try:
+    import curses
+except:
+    curses = None
+
 PINBOARD_API_HOST = 'api.pinboard.in'
 PINBOARD_API_PATH = 'v1'
 PINBOARD_API_REALM = 'API'
 PINBOARD_API = "https://%s/%s" % (PINBOARD_API_HOST, PINBOARD_API_PATH)
+
+colors = { 'normal': '', 'green': '', 'red': '' }
 
 def pinboard_api_opener(user, passwd):
     import urllib2
@@ -86,6 +93,29 @@ def sanitize_url(url):
         return url[0:hash_position]
     return url
 
+def setup_colors():
+    has_colors = False
+    if curses and sys.stdout.isatty():
+        try:
+            curses.setupterm()
+            has_colors = curses.tigetnum('colors') > 0
+        except:
+            pass
+
+    if has_colors:
+        global colors
+        fg = curses.tigetstr('setaf') or curses.tigetstr('setf') or ''
+        colors['normal'] = curses.tigetstr('sgr0')
+        colors['green'] = curses.tparm(fg, 2)
+        colors['red'] = curses.tparm(fg, 1)
+
+def report(code, href):
+    if str(code) == 'OK':
+        color = 'green'
+    else:
+        color = 'red'
+    print "%s[%3s] %s%s" % (colors[color], code, colors['normal'], href)
+
 def main():
     from optparse import OptionParser
 
@@ -126,6 +156,8 @@ def main():
     api = pydelicious.DeliciousAPI(options.username, options.password,
             api_request=api_request, build_opener=api_opener)
 
+    setup_colors()
+
     if options.verbose:
         service = 'Pinboard' if options.pinboard else 'Delicious'
         print "Retrieving all %s posts for %s" % (service, options.username)
@@ -150,16 +182,16 @@ def main():
         try:
             url = urllib.urlopen(sanitize_url(href))
         except IOError as e:
-            print "[Err] %s" % href
+            report('Err', href)
             print "  %s" % e
             if options.errors:
                 stale = True
         else:
             if url.getcode() != 200:
                 stale = True
-                print "[%3d] %s" % (url.getcode(), href)
+                report(str(url.getcode()), href)
             elif options.verbose:
-                print "[ OK] %s" % href
+                report('OK', href)
 
         if stale and options.delete: 
             print "  Deleting %s" % href
