@@ -10,6 +10,7 @@ setup(
     author_email="jon@indelible.org",
     url="https://github.com/jparise/stale",
     scripts=['stale'],
+    install_requires=['pydelicious'],
     license="MIT License",
     classifiers=['License :: OSI Approved :: MIT License',
                  'Operating System :: OS Independent',
