@@ -12,7 +12,10 @@ setup(
     scripts=['stale'],
     install_requires=['pydelicious'],
     license="MIT License",
-    classifiers=['License :: OSI Approved :: MIT License',
-                 'Operating System :: OS Independent',
-                 'Programming Language :: Python'],
+    classifiers=['Environment :: Console',
+        'Intended Audience :: End Users/Desktop',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2',
+        'Topic :: Utilities'],
 )
