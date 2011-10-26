@@ -181,6 +181,8 @@ def main():
 
         try:
             url = urllib.urlopen(sanitize_url(href))
+        except KeyboardInterrupt:
+            break
         except IOError as e:
             report('Err', href)
             print "  %s" % e
