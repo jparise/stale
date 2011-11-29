@@ -142,8 +142,7 @@ def main():
         options.password = getpass('Password: ')
 
     if not options.username or not options.password:
-        print "A username and password must be provided"
-        sys.exit(1)
+        parser.error("a username and password must be provided")
 
     # Select the appropriate API handler functions for the chosen service.
     api_request = pydelicious.dlcs_api_request
