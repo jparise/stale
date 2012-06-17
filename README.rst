@@ -2,12 +2,11 @@
 Stale
 =====
 
-Stale is a simple script that can identify and delete stale `Delicious`_ and
-`Pinboard`_ links.
+Stale identifies and deletes stale `Delicious`_ and `Pinboard`_ links.
 
 You can grab the latest code package by cloning this repository::
 
-    $ git clone git://github.com/jparise/stale.git
+    $ git clone https://github.com/jparise/stale.git
 
 ... or by downloading the tarball::
 
@@ -20,6 +19,10 @@ Stale is written in `Python`_ and depends on the `pydelicious`_ package.  You
 can install pydelicious using ``easy_install``::
 
     $ easy_install pydelicious
+
+... or ``pip``::
+
+    $ pip install pydelicious
 
 Usage
 -----
