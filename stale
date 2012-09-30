@@ -128,6 +128,10 @@ def main():
             help="delete stale links", default=False)
     parser.add_option('-e', action='store_true', dest='errors',
             help="equate errors with staleness", default=False)
+    parser.add_option('-r', action='store_true', dest='allow_redirects',
+            help="treat redirects as not stale", default=False)
+    parser.add_option('-P', action='store_true', dest='allow_private',
+            help="treat permission errors  as not stale", default=False)
     parser.add_option('-v', action='store_true', dest='verbose',
             help="enable verbose output", default=False)
 
@@ -174,6 +178,10 @@ def main():
     if options.verbose:
         print "Checking %s posts ..." % len(result['posts'])
 
+    non_stale_status = set([2])  # normal good response
+    if options.allow_redirects:
+        non_stale_status.add(3)  # any form of redirect
+
     for post in result['posts']:
         href = post['href']
         stale = False
@@ -188,18 +196,22 @@ def main():
             if options.errors:
                 stale = True
         else:
-            if url.getcode() != 200:
-                stale = True
-                report(str(url.getcode()), href)
-            elif options.verbose:
-                report('OK', href)
+            code = url.getcode()
+            if options.allow_private and code == 403:
+                stale = False
+            else:
+                stale = (code / 100) not in non_stale_status
 
-        if stale and options.delete: 
-            print "  Deleting %s" % href
-            try:
-                api.posts_delete(href)
-            except pydelicious.DeliciousError as e:
-                print "  %s" % str(e)
+        if stale:
+            report(str(url.getcode()), href)
+            if options.delete:
+                print "  Deleting %s" % href
+                try:
+                    api.posts_delete(href)
+                except pydelicious.DeliciousError as e:
+                    print "  %s" % str(e)
+        elif options.verbose:
+            report('OK', href)
 
 if __name__ == '__main__':
     main()
