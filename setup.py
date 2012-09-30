@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+# Bootstrap installation of Distribute
+import distribute_setup
+distribute_setup.use_setuptools()
+
+from setuptools import setup
 
 setup(
     name="stale",
