@@ -27,9 +27,11 @@ __version__ = '1.1'
 
 import pydelicious
 import Queue
+import re
 import sys
 import threading
 import urllib
+import urlparse
 
 try:
     import curses
@@ -123,6 +125,11 @@ def check_posts(post_queue, options, api):
     if options.allow_redirects:
         non_stale_status.add(3)  # any form of redirect
 
+    # Build a regex for matching the problem domains.
+    prob_dom_pat = '(' + '|'.join('\\.'.join(d.split('.'))
+                                  for d in options.problem_domains) + ')$'
+    prob_dom_re = re.compile(prob_dom_pat, re.IGNORECASE)
+
     while True:
         post = post_queue.get()
         if post is None:
@@ -151,17 +158,27 @@ def check_posts(post_queue, options, api):
                 stale = False
             else:
                 stale = (code / 100) not in non_stale_status
+
+        delete = stale and options.delete
         
         if stale:
             report(str(url.getcode()), href)
+            parsed_url = urlparse.urlparse(href)
+            if prob_dom_re.search(parsed_url.netloc):
+                # Problem domains are always treated as OK
+                print "  IGNORING ERROR WITH PROBLEM DOMAIN %s" % parsed_url.netloc
+                delete = False
+
+        elif options.verbose:
+            report('OK', href)
+
+        if delete:
             if options.delete:
                 print "  Deleting %s" % href
                 try:
                     api.posts_delete(href)
                 except pydelicious.DeliciousError as e:
                     print "  %s" % str(e)
-        elif options.verbose:
-            report('OK', href)
 
         post_queue.task_done()
 
@@ -184,6 +201,9 @@ def main():
             help="treat permission errors  as not stale", default=False)
     parser.add_option('-j', action='store', dest='num_jobs', type=int,
             help="the number of parallel jobs to run", default=1)
+    parser.add_option('--problem-domain', action='append', dest='problem_domains',
+                      help='domains that do not work with stale checker, always treated as OK',
+                      default=['.nytimes.com'])
     parser.add_option('-v', action='store_true', dest='verbose',
             help="enable verbose output", default=False)
 
