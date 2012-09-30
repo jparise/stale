@@ -26,8 +26,10 @@ __author__ = 'Jon Parise <jon@indelible.org>'
 __version__ = '1.1'
 
 import pydelicious
+import re
 import sys
 import urllib
+import urlparse
 
 try:
     import curses
@@ -130,7 +132,9 @@ def main():
             help="equate errors with staleness", default=False)
     parser.add_option('-v', action='store_true', dest='verbose',
             help="enable verbose output", default=False)
-
+    parser.add_option('--problem-domain', action='append', dest='problem_domains',
+                      help='domains that do not work with stale checker, always treated as OK',
+                      default=['.nytimes.com'])
     (options, args) = parser.parse_args()
 
     # Perform some basic command line validation.
@@ -144,6 +148,11 @@ def main():
     if not options.username or not options.password:
         parser.error("a username and password must be provided")
 
+    # Build a regex for matching the problem domains.
+    prob_dom_pat = '(' + '|'.join('\\.'.join(d.split('.'))
+                                  for d in options.problem_domains) + ')$'
+    prob_dom_re = re.compile(prob_dom_pat, re.IGNORECASE)
+        
     # Select the appropriate API handler functions for the chosen service.
     api_request = pydelicious.dlcs_api_request
     api_opener = pydelicious.dlcs_api_opener
@@ -190,11 +199,21 @@ def main():
         else:
             if url.getcode() != 200:
                 stale = True
-                report(str(url.getcode()), href)
-            elif options.verbose:
-                report('OK', href)
 
-        if stale and options.delete: 
+        delete = stale and options.delete
+
+        if stale:
+            report(str(url.getcode()), href)
+            parsed_url = urlparse.urlparse(href)
+            if prob_dom_re.search(parsed_url.netloc):
+                # Problem domains are always treated as OK
+                print "  IGNORING ERROR WITH PROBLEM DOMAIN %s" % parsed_url.netloc
+                delete = False
+
+        elif options.verbose:
+            report('OK', href)
+            
+        if delete:
             print "  Deleting %s" % href
             try:
                 api.posts_delete(href)
