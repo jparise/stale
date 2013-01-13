@@ -26,8 +26,12 @@ __author__ = 'Jon Parise <jon@indelible.org>'
 __version__ = '1.1'
 
 import pydelicious
+import Queue
+import re
 import sys
+import threading
 import urllib
+import urlparse
 
 try:
     import curses
@@ -116,6 +120,69 @@ def report(code, href):
         color = 'red'
     print "%s[%3s] %s%s" % (colors[color], code, colors['normal'], href)
 
+def check_posts(post_queue, options, api):
+    non_stale_status = set([2])  # normal good response
+    if options.allow_redirects:
+        non_stale_status.add(3)  # any form of redirect
+
+    # Build a regex for matching the problem domains.
+    prob_dom_pat = '(' + '|'.join('\\.'.join(d.split('.'))
+                                  for d in options.problem_domains) + ')$'
+    prob_dom_re = re.compile(prob_dom_pat, re.IGNORECASE)
+
+    while True:
+        post = post_queue.get()
+        if post is None:
+            return
+
+        href = post['href']
+        stale = False
+
+        try:
+            url = urllib.urlopen(sanitize_url(href))
+        except KeyboardInterrupt:
+            break
+        except IOError as e:
+            report('Err', href)
+            print "  %s" % e
+            if options.errors:
+                stale = True
+        except Exception as e:
+            # Unhandled error in urllib
+            report('Err', href)
+            print 'ERROR:', e
+            stale = False  # do not penalize URL for our code issue
+        else:
+            code = url.getcode()
+            if options.allow_private and code == 403:
+                stale = False
+            else:
+                stale = (code / 100) not in non_stale_status
+
+        delete = stale and options.delete
+        
+        if stale:
+            report(str(url.getcode()), href)
+            parsed_url = urlparse.urlparse(href)
+            if prob_dom_re.search(parsed_url.netloc):
+                # Problem domains are always treated as OK
+                print "  IGNORING ERROR WITH PROBLEM DOMAIN %s" % parsed_url.netloc
+                delete = False
+
+        elif options.verbose:
+            report('OK', href)
+
+        if delete:
+            if options.delete:
+                print "  Deleting %s" % href
+                try:
+                    api.posts_delete(href)
+                except pydelicious.DeliciousError as e:
+                    print "  %s" % str(e)
+
+        post_queue.task_done()
+
+
 def main():
     from optparse import OptionParser
 
@@ -132,6 +199,11 @@ def main():
             help="treat redirects as not stale", default=False)
     parser.add_option('-P', action='store_true', dest='allow_private',
             help="treat permission errors  as not stale", default=False)
+    parser.add_option('-j', action='store', dest='num_jobs', type=int,
+            help="the number of parallel jobs to run", default=1)
+    parser.add_option('--problem-domain', action='append', dest='problem_domains',
+                      help='domains that do not work with stale checker, always treated as OK',
+                      default=['.nytimes.com'])
     parser.add_option('-v', action='store_true', dest='verbose',
             help="enable verbose output", default=False)
 
@@ -178,40 +250,36 @@ def main():
     if options.verbose:
         print "Checking %s posts ..." % len(result['posts'])
 
-    non_stale_status = set([2])  # normal good response
-    if options.allow_redirects:
-        non_stale_status.add(3)  # any form of redirect
+    post_queue = Queue.Queue()
 
+    # Start the worker threads requested by
+    # the user.
+    post_workers = [threading.Thread(target=check_posts,
+                                     args=(post_queue, options, api),
+                                     name='check-posts-%d' % j,
+                                     )
+                    for j in xrange(options.num_jobs)
+                    ]
+    for w in post_workers:
+        w.setDaemon(True)
+        w.start()
+
+    # Fill the work queue
     for post in result['posts']:
-        href = post['href']
-        stale = False
+        post_queue.put(post)
 
+    # Include a "poison pill" for each worker
+    # to stop the threads when there are no
+    # more posts to process.
+    for w in post_workers:
+        post_queue.put(None)
+
+    # Wait for the workers to finish.
+    for w in post_workers:
         try:
-            url = urllib.urlopen(sanitize_url(href))
+            w.join()
         except KeyboardInterrupt:
             break
-        except IOError as e:
-            report('Err', href)
-            print "  %s" % e
-            if options.errors:
-                stale = True
-        else:
-            code = url.getcode()
-            if options.allow_private and code == 403:
-                stale = False
-            else:
-                stale = (code / 100) not in non_stale_status
-
-        if stale:
-            report(str(url.getcode()), href)
-            if options.delete:
-                print "  Deleting %s" % href
-                try:
-                    api.posts_delete(href)
-                except pydelicious.DeliciousError as e:
-                    print "  %s" % str(e)
-        elif options.verbose:
-            report('OK', href)
 
 if __name__ == '__main__':
     main()
