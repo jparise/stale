@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2010,2011,2012,2013 Jon Parise <jon@indelible.org>
+# Copyright (c) 2010-2016 Jon Parise <jon@indelible.org>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -8,10 +8,10 @@
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in
 # all copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -39,7 +39,8 @@ PINBOARD_API_PATH = 'v1'
 PINBOARD_API_REALM = 'API'
 PINBOARD_API = "https://%s/%s" % (PINBOARD_API_HOST, PINBOARD_API_PATH)
 
-colors = { 'normal': '', 'green': '', 'red': '' }
+colors = {'normal': '', 'green': '', 'red': ''}
+
 
 def pinboard_api_opener(user, passwd):
     import urllib2
@@ -51,7 +52,7 @@ def pinboard_api_opener(user, passwd):
     handlers = (auth_handler, pydelicious.DeliciousHTTPErrorHandler())
 
     if pydelicious.DEBUG:
-        httpdebug = urllib2.HTTPHandler(debuglevel=DEBUG)
+        httpdebug = urllib2.HTTPHandler(debuglevel=1)
         handlers += (httpdebug,)
 
     if pydelicious.HTTP_PROXY or pydelicious.HTTPS_PROXY:
@@ -60,12 +61,13 @@ def pinboard_api_opener(user, passwd):
             proto['https'] = pydelicious.HTTPS_PROXY
         if pydelicious.HTTP_PROXY:
             proto['http'] = pydelicious.HTTP_PROXY
-        handlers += (urllib2.ProxyHandler( proto ),)
+        handlers += (urllib2.ProxyHandler(proto),)
 
     return urllib2.build_opener(*handlers)
 
+
 def pinboard_api_request(path, params=None, user='', passwd='', throttle=True,
-        opener=None):
+                         opener=None):
     if throttle:
         pydelicious.Waiter()
 
@@ -74,24 +76,26 @@ def pinboard_api_request(path, params=None, user='', passwd='', throttle=True,
     else:
         url = "%s/%s" % (PINBOARD_API, path)
 
-    if pydelicious.DEBUG: print >>sys.stderr, \
-            "pinboard_api_request: %s" % url
+    if pydelicious.DEBUG:
+        print >> sys.stderr, "pinboard_api_request: %s" % url
 
     if not opener:
         opener = pinboard_api_opener(user, passwd)
 
     fl = pydelicious.http_request(url, opener=opener)
 
-    if pydelicious.DEBUG>2: print >>sys.stderr, \
-            pydelicious.pformat(fl.info().headers)
+    if pydelicious.DEBUG > 2:
+        print >> sys.stderr, pydelicious.pformat(fl.info().headers)
 
     return fl
+
 
 def sanitize_url(url):
     hash_position = url.find('#')
     if hash_position != -1:
         return url[0:hash_position]
     return url
+
 
 def setup_colors():
     has_colors = False
@@ -109,6 +113,7 @@ def setup_colors():
         colors['green'] = curses.tparm(fg, 2)
         colors['red'] = curses.tparm(fg, 1)
 
+
 def report(code, href):
     if str(code) == 'OK':
         color = 'green'
@@ -116,20 +121,23 @@ def report(code, href):
         color = 'red'
     print "%s[%3s] %s%s" % (colors[color], code, colors['normal'], href)
 
+
 def main():
     from optparse import OptionParser
 
     parser = OptionParser(version="%prog " + __version__, description=__doc__)
-    parser.add_option('-u', dest='username', help="Delicious/Pinboard username")
-    parser.add_option('-p', dest='password', help="Delicious/Pinboard password")
+    parser.add_option('-u', dest='username',
+                      help="Delicious/Pinboard username")
+    parser.add_option('-p', dest='password',
+                      help="Delicious/Pinboard password")
     parser.add_option('-i', action='store_true', dest='pinboard',
-            help="use Pinboard instead of Delicious", default=False)
+                      help="use Pinboard instead of Delicious", default=False)
     parser.add_option('-d', action='store_true', dest='delete',
-            help="delete stale links", default=False)
+                      help="delete stale links", default=False)
     parser.add_option('-e', action='store_true', dest='errors',
-            help="equate errors with staleness", default=False)
+                      help="equate errors with staleness", default=False)
     parser.add_option('-v', action='store_true', dest='verbose',
-            help="enable verbose output", default=False)
+                      help="enable verbose output", default=False)
 
     (options, args) = parser.parse_args()
 
@@ -152,8 +160,11 @@ def main():
         api_opener = pinboard_api_opener
 
     # Construct the Delicious API object.
-    api = pydelicious.DeliciousAPI(options.username, options.password,
-            api_request=api_request, build_opener=api_opener)
+    api = pydelicious.DeliciousAPI(
+        options.username,
+        options.password,
+        api_request=api_request,
+        build_opener=api_opener)
 
     setup_colors()
 
@@ -167,7 +178,7 @@ def main():
         print "Authorization failure"
         sys.exit(1)
 
-    if not result or not 'posts' in result:
+    if not result or 'posts' not in result:
         print "Failed to retrieve posts"
         sys.exit(1)
 
