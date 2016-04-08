@@ -1,33 +1,27 @@
-=====
-Stale
-=====
+# Stale
 
-Stale identifies and deletes stale `Delicious`_ and `Pinboard`_ links.
+Stale identifies and deletes stale [Delicious][] and [Pinboard][] links.
 
-You can grab the latest code package by cloning this repository::
+You can grab the latest code package by cloning this repository:
 
     $ git clone https://github.com/jparise/stale.git
 
-... or by downloading the tarball::
+... or by downloading the tarball:
 
     https://github.com/jparise/stale/tarball/master
 
-Dependencies
-------------
+## Dependencies
 
-Stale is written in `Python`_ and depends on the `pydelicious`_ package.  You
-can install pydelicious using ``easy_install``::
+Stale is written in [Python][] and depends on the [pydelicious][] package.
+You can install pydelicious using `easy_install`::
 
     $ easy_install pydelicious
 
-... or ``pip``::
+... or `pip`:
 
     $ pip install pydelicious
 
-Usage
------
-
-::
+## Usage
 
     Usage: stale.py [options]
 
@@ -43,7 +37,7 @@ Usage
     -e           equate errors with staleness
     -v           enable verbose output
 
-.. _Python: http://www.python.org/
-.. _Delicious: http://www.delicious.com/
-.. _Pinboard: http://pinboard.in/
-.. _pydelicious: http://code.google.com/p/pydelicious/
+[Python]: http://www.python.org/
+[Delicious]: http://www.delicious.com/
+[Pinboard]: http://pinboard.in/
+[pydelicious]: http://code.google.com/p/pydelicious/
