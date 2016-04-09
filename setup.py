@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 setup(
     name="stale",
@@ -10,7 +10,6 @@ setup(
     author_email="jon@indelible.org",
     keywords="delicious pinboard",
     url="https://github.com/jparise/stale",
-    scripts=['stale'],
     install_requires=['pydelicious'],
     license="MIT License",
     classifiers=[
@@ -20,5 +19,7 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 2.7',
         'Topic :: Utilities'],
+    packages=find_packages(),
+    entry_points={'console_scripts': ['stale = stale:main']},
     zip_safe=True,
 )
