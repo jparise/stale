@@ -123,54 +123,56 @@ def report(code, href):
 
 
 def main():
-    from optparse import OptionParser
+    import argparse
 
-    parser = OptionParser(version="%prog " + __version__, description=__doc__)
-    parser.add_option('-u', dest='username',
-                      help="Delicious/Pinboard username")
-    parser.add_option('-p', dest='password',
-                      help="Delicious/Pinboard password")
-    parser.add_option('-i', action='store_true', dest='pinboard',
-                      help="use Pinboard instead of Delicious", default=False)
-    parser.add_option('-d', action='store_true', dest='delete',
-                      help="delete stale links", default=False)
-    parser.add_option('-e', action='store_true', dest='errors',
-                      help="equate errors with staleness", default=False)
-    parser.add_option('-v', action='store_true', dest='verbose',
-                      help="enable verbose output", default=False)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('-u', dest='username',
+                        help="Delicious/Pinboard username")
+    parser.add_argument('-p', dest='password',
+                        help="Delicious/Pinboard password")
+    parser.add_argument('-i', action='store_true', dest='pinboard',
+                        help="use Pinboard instead of Delicious",
+                        default=False)
+    parser.add_argument('-d', action='store_true', dest='delete',
+                        help="delete stale links", default=False)
+    parser.add_argument('-e', action='store_true', dest='errors',
+                        help="equate errors with staleness", default=False)
+    parser.add_argument('-v', action='store_true', dest='verbose',
+                        help="enable verbose output", default=False)
+    parser.add_argument('--version', action='version', version=__version__)
 
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
     # Perform some basic command line validation.
-    if not options.username:
-        options.username = raw_input('Username: ')
+    if not args.username:
+        args.username = raw_input('Username: ')
 
-    if not options.password:
+    if not args.password:
         from getpass import getpass
-        options.password = getpass('Password: ')
+        args.password = getpass('Password: ')
 
-    if not options.username or not options.password:
+    if not args.username or not args.password:
         parser.error("a username and password must be provided")
 
     # Select the appropriate API handler functions for the chosen service.
     api_request = pydelicious.dlcs_api_request
     api_opener = pydelicious.dlcs_api_opener
-    if options.pinboard:
+    if args.pinboard:
         api_request = pinboard_api_request
         api_opener = pinboard_api_opener
 
     # Construct the Delicious API object.
     api = pydelicious.DeliciousAPI(
-        options.username,
-        options.password,
+        args.username,
+        args.password,
         api_request=api_request,
         build_opener=api_opener)
 
     setup_colors()
 
-    if options.verbose:
-        service = 'Pinboard' if options.pinboard else 'Delicious'
-        print "Retrieving all %s posts for %s" % (service, options.username)
+    if args.verbose:
+        service = 'Pinboard' if args.pinboard else 'Delicious'
+        print "Retrieving all %s posts for %s" % (service, args.username)
 
     try:
         result = api.posts_all()
@@ -182,7 +184,7 @@ def main():
         print "Failed to retrieve posts"
         sys.exit(1)
 
-    if options.verbose:
+    if args.verbose:
         print "Checking %s posts ..." % len(result['posts'])
 
     for post in result['posts']:
@@ -196,17 +198,17 @@ def main():
         except IOError as e:
             report('Err', href)
             print "  %s" % e
-            if options.errors:
+            if args.errors:
                 stale = True
         else:
             code = url.getcode()
             if code / 100 == 4 and code != 403:
                 stale = True
                 report(str(code), href)
-            elif options.verbose:
+            elif args.verbose:
                 report('OK', href)
 
-        if stale and options.delete:
+        if stale and args.delete:
             print "  Deleting %s" % href
             try:
                 api.posts_delete(href)
