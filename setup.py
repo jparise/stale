@@ -4,7 +4,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="stale",
-    version='1.1',
+    version='2.0-dev',
     description="Identifies (and optionally removes) stale Delicious and Pinboard links",
     author="Jon Parise",
     author_email="jon@indelible.org",

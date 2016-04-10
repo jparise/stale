@@ -22,9 +22,6 @@
 
 """Identify (and optionally delete) stale Delicious and Pinboard links"""
 
-__author__ = 'Jon Parise <jon@indelible.org>'
-__version__ = '1.1'
-
 import pydelicious
 import sys
 import urllib
@@ -33,6 +30,9 @@ try:
     import curses
 except:
     curses = None
+
+__author__ = 'Jon Parise <jon@indelible.org>'
+__version__ = '2.0-dev'
 
 PINBOARD_API_HOST = 'api.pinboard.in'
 PINBOARD_API_PATH = 'v1'
