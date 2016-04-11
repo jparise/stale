@@ -90,12 +90,12 @@ def setup_colors():
         colors['red'] = curses.tparm(fg, 1)
 
 
-def report(code, href):
+def report(code, url):
     if str(code) == 'OK':
         color = 'green'
     else:
         color = 'red'
-    print "%s[%3s] %s%s" % (colors[color], code, colors['normal'], href)
+    print "%s[%3s] %s%s" % (colors[color], code, colors['normal'], url)
 
 
 def main():
@@ -133,15 +133,15 @@ def main():
         print "Checking %s posts ..." % len(posts)
 
     for post in posts:
-        href = post['href']
+        url = post['href']
         stale = False
 
         try:
-            result = check_url(href)
+            result = check_url(url)
         except KeyboardInterrupt:
             break
         except IOError as e:
-            report('Err', href)
+            report('Err', url)
             print '> ' + str(e).replace('\n', '\n> ')
             if args.errors:
                 stale = True
@@ -149,14 +149,14 @@ def main():
             code = result.getcode()
             if code / 100 == 4 and code != 403:
                 stale = True
-                report(str(code), href)
+                report(str(code), url)
             elif args.verbose:
-                report('OK', href)
+                report('OK', url)
 
         if stale and args.delete:
-            print "  Deleting %s" % href
+            print "  Deleting %s" % url
             try:
-                pinboard_call('posts/delete', token=args.token, url=href)
+                pinboard_call('posts/delete', token=args.token, url=url)
             except Exception as e:
                 print '> ' + str(e)
 
