@@ -37,6 +37,9 @@ __author__ = 'Jon Parise <jon@indelible.org>'
 __version__ = '2.0-dev'
 
 PINBOARD_API_BASE = 'https://api.pinboard.in/v1/'
+USER_AGENT = \
+    'Mozilla/5.0 (compatible; stale/{}; +https://github.com/jparise/stale)' \
+    .format(__version__)
 
 colors = {'normal': '', 'green': '', 'red': ''}
 
@@ -51,17 +54,23 @@ def pinboard_call(path, token, **kwargs):
     url += '?' + urllib.urlencode(params)
 
     request = urllib2.Request(url)
-    opener = urllib2.build_opener(urllib2.HTTPSHandler)
-    response = opener.open(request)
+    request.add_header('User-Agent', USER_AGENT)
+    response = urllib2.urlopen(url)
 
     return json.load(response)
 
 
-def sanitize_url(url):
-    hash_position = url.find('#')
-    if hash_position != -1:
-        return url[0:hash_position]
-    return url
+def check_url(url):
+    """Check the given URL by issuring a HEAD request."""
+    # We don't want to include a fragment in our request.
+    url, fragment = urlparse.urldefrag(url)
+
+    # Attempt to open the target URL using a HEAD request.
+    request = urllib2.Request(url)
+    request.get_method = lambda: 'HEAD'
+    request.add_header('User-Agent', USER_AGENT)
+
+    return urllib2.urlopen(request)
 
 
 def setup_colors():
@@ -128,7 +137,7 @@ def main():
         stale = False
 
         try:
-            url = urllib2.urlopen(sanitize_url(href))
+            result = check_url(href)
         except KeyboardInterrupt:
             break
         except IOError as e:
@@ -137,7 +146,7 @@ def main():
             if args.errors:
                 stale = True
         else:
-            code = url.getcode()
+            code = result.getcode()
             if code / 100 == 4 and code != 403:
                 stale = True
                 report(str(code), href)
