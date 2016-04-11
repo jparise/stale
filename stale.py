@@ -20,11 +20,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-"""Identify (and optionally delete) stale Delicious and Pinboard links"""
+"""Identify (and optionally delete) stale Pinboard links."""
 
-import pydelicious
+import json
 import sys
 import urllib
+import urllib2
+import urlparse
 
 try:
     import curses
@@ -34,60 +36,25 @@ except:
 __author__ = 'Jon Parise <jon@indelible.org>'
 __version__ = '2.0-dev'
 
-PINBOARD_API_HOST = 'api.pinboard.in'
-PINBOARD_API_PATH = 'v1'
-PINBOARD_API_REALM = 'API'
-PINBOARD_API = "https://%s/%s" % (PINBOARD_API_HOST, PINBOARD_API_PATH)
+PINBOARD_API_BASE = 'https://api.pinboard.in/v1/'
 
 colors = {'normal': '', 'green': '', 'red': ''}
 
 
-def pinboard_api_opener(user, passwd):
-    import urllib2
+def pinboard_call(path, token, **kwargs):
+    """Make a Pinboard API request and return a JSON-parsed response."""
+    params = kwargs.copy()
+    params['auth_token'] = token
+    params['format'] = 'json'
 
-    manager = urllib2.HTTPPasswordMgr()
-    manager.add_password(PINBOARD_API_REALM, PINBOARD_API_HOST, user, passwd)
-    auth_handler = urllib2.HTTPBasicAuthHandler(manager)
+    url = urlparse.urljoin(PINBOARD_API_BASE, path)
+    url += '?' + urllib.urlencode(params)
 
-    handlers = (auth_handler, pydelicious.DeliciousHTTPErrorHandler())
+    request = urllib2.Request(url)
+    opener = urllib2.build_opener(urllib2.HTTPSHandler)
+    response = opener.open(request)
 
-    if pydelicious.DEBUG:
-        httpdebug = urllib2.HTTPHandler(debuglevel=1)
-        handlers += (httpdebug,)
-
-    if pydelicious.HTTP_PROXY or pydelicious.HTTPS_PROXY:
-        proto = {}
-        if pydelicious.HTTPS_PROXY:
-            proto['https'] = pydelicious.HTTPS_PROXY
-        if pydelicious.HTTP_PROXY:
-            proto['http'] = pydelicious.HTTP_PROXY
-        handlers += (urllib2.ProxyHandler(proto),)
-
-    return urllib2.build_opener(*handlers)
-
-
-def pinboard_api_request(path, params=None, user='', passwd='', throttle=True,
-                         opener=None):
-    if throttle:
-        pydelicious.Waiter()
-
-    if params:
-        url = "%s/%s?%s" % (PINBOARD_API, path, urllib.urlencode(params))
-    else:
-        url = "%s/%s" % (PINBOARD_API, path)
-
-    if pydelicious.DEBUG:
-        print >> sys.stderr, "pinboard_api_request: %s" % url
-
-    if not opener:
-        opener = pinboard_api_opener(user, passwd)
-
-    fl = pydelicious.http_request(url, opener=opener)
-
-    if pydelicious.DEBUG > 2:
-        print >> sys.stderr, pydelicious.pformat(fl.info().headers)
-
-    return fl
+    return json.load(response)
 
 
 def sanitize_url(url):
@@ -126,14 +93,8 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('-u', dest='username',
-                        help="Delicious/Pinboard username")
-    parser.add_argument('-p', dest='password',
-                        help="Delicious/Pinboard password")
-    parser.add_argument('-i', action='store_true', dest='pinboard',
-                        help="use Pinboard instead of Delicious",
-                        default=False)
-    parser.add_argument('-d', action='store_true', dest='delete',
+    parser.add_argument('-t', '--token', help='your Pinboard API token')
+    parser.add_argument('-d', '--delete', action='store_true',
                         help="delete stale links", default=False)
     parser.add_argument('-e', action='store_true', dest='errors',
                         help="equate errors with staleness", default=False)
@@ -143,56 +104,31 @@ def main():
 
     args = parser.parse_args()
 
-    # Perform some basic command line validation.
-    if not args.username:
-        args.username = raw_input('Username: ')
-
-    if not args.password:
+    if not args.token:
         from getpass import getpass
-        args.password = getpass('Password: ')
-
-    if not args.username or not args.password:
-        parser.error("a username and password must be provided")
-
-    # Select the appropriate API handler functions for the chosen service.
-    api_request = pydelicious.dlcs_api_request
-    api_opener = pydelicious.dlcs_api_opener
-    if args.pinboard:
-        api_request = pinboard_api_request
-        api_opener = pinboard_api_opener
-
-    # Construct the Delicious API object.
-    api = pydelicious.DeliciousAPI(
-        args.username,
-        args.password,
-        api_request=api_request,
-        build_opener=api_opener)
+        args.token = getpass('API Token: ')
 
     setup_colors()
 
-    if args.verbose:
-        service = 'Pinboard' if args.pinboard else 'Delicious'
-        print "Retrieving all %s posts for %s" % (service, args.username)
-
     try:
-        result = api.posts_all()
-    except pydelicious.PyDeliciousUnauthorized:
-        print "Authorization failure"
+        posts = pinboard_call('posts/all', token=args.token)
+    except Exception as e:
+        print "Failed to retrieve posts:", e
         sys.exit(1)
 
-    if not result or 'posts' not in result:
-        print "Failed to retrieve posts"
+    if not posts:
+        print "No posts were retrieved."
         sys.exit(1)
 
     if args.verbose:
-        print "Checking %s posts ..." % len(result['posts'])
+        print "Checking %s posts ..." % len(posts)
 
-    for post in result['posts']:
+    for post in posts:
         href = post['href']
         stale = False
 
         try:
-            url = urllib.urlopen(sanitize_url(href))
+            url = urllib2.urlopen(sanitize_url(href))
         except KeyboardInterrupt:
             break
         except IOError as e:
@@ -211,8 +147,8 @@ def main():
         if stale and args.delete:
             print "  Deleting %s" % href
             try:
-                api.posts_delete(href)
-            except pydelicious.DeliciousError as e:
+                pinboard_call('posts/delete', token=args.token, url=href)
+            except Exception as e:
                 print "  %s" % str(e)
 
 if __name__ == '__main__':

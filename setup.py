@@ -5,12 +5,11 @@ from setuptools import find_packages, setup
 setup(
     name="stale",
     version='2.0-dev',
-    description="Identifies (and optionally removes) stale Delicious and Pinboard links",
+    description="Identifies (and optionally removes) stale Pinboard links",
     author="Jon Parise",
     author_email="jon@indelible.org",
     keywords="delicious pinboard",
     url="https://github.com/jparise/stale",
-    install_requires=['pydelicious'],
     license="MIT License",
     classifiers=[
         'Environment :: Console',

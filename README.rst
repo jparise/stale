@@ -2,7 +2,7 @@
 Stale
 =====
 
-Stale identifies and deletes stale `Delicious`_ and `Pinboard`_ links.
+Stale identifies and deletes stale `Pinboard`_ links.
 
 You can grab the latest code package by cloning this repository::
 
@@ -12,38 +12,26 @@ You can grab the latest code package by cloning this repository::
 
     https://github.com/jparise/stale/tarball/master
 
-Dependencies
-------------
-
-Stale is written in `Python`_ and depends on the `pydelicious`_ package.  You
-can install pydelicious using ``easy_install``::
-
-    $ easy_install pydelicious
-
-... or ``pip``::
-
-    $ pip install pydelicious
 
 Usage
 -----
 
 ::
 
-    Usage: stale.py [options]
+    usage: stale.py [-h] [-t TOKEN] [-d] [-e] [-v] [--version]
 
-    Identify (and optionally delete) stale Delicious and Pinboard links
+    Identify (and optionally delete) stale Pinboard links.
 
-    Options:
-    --version    show program's version number and exit
-    -h, --help   show this help message and exit
-    -u USERNAME  Delicious/Pinboard username
-    -p PASSWORD  Delicious/Pinboard password
-    -i           use Pinboard instead of Delicious
-    -d           delete stale links
-    -e           equate errors with staleness
-    -v           enable verbose output
+    optional arguments:
+    -h, --help            show this help message and exit
+    -t TOKEN, --token TOKEN
+                            your Pinboard API token
+    -d, --delete          delete stale links
+    -e                    equate errors with staleness
+    -v                    enable verbose output
+    --version             show program's version number and exit
 
-.. _Python: http://www.python.org/
-.. _Delicious: http://www.delicious.com/
+You can find your personal Pinboard API token in your `Settings`_.
+
 .. _Pinboard: http://pinboard.in/
-.. _pydelicious: http://code.google.com/p/pydelicious/
+.. _Settings: https://pinboard.in/settings/password
