@@ -95,7 +95,7 @@ def report(code, url):
         color = 'green'
     else:
         color = 'red'
-    print "%s[%3s] %s%s" % (colors[color], code, colors['normal'], url)
+    print '{}[{}] {}{}'.format(colors[color], code, colors['normal'], url)
 
 
 def main():
@@ -130,7 +130,7 @@ def main():
         sys.exit(1)
 
     if args.verbose:
-        print "Checking %s posts ..." % len(posts)
+        print "Checking {} posts ...".format(len(posts))
 
     for post in posts:
         url = post['href']
@@ -154,7 +154,7 @@ def main():
                 report('OK', url)
 
         if stale and args.delete:
-            print "  Deleting %s" % url
+            print "  Deleting {}".format(url)
             try:
                 pinboard_call('posts/delete', token=args.token, url=url)
             except Exception as e:
