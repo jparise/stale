@@ -142,7 +142,7 @@ def main():
             break
         except IOError as e:
             report('Err', href)
-            print "  %s" % e
+            print '> ' + str(e).replace('\n', '\n> ')
             if args.errors:
                 stale = True
         else:
@@ -158,7 +158,7 @@ def main():
             try:
                 pinboard_call('posts/delete', token=args.token, url=href)
             except Exception as e:
-                print "  %s" % str(e)
+                print '> ' + str(e)
 
 if __name__ == '__main__':
     main()
