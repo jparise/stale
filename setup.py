@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
 from setuptools import find_packages, setup
+from stale import __version__
 
 setup(
     name="stale",
-    version='2.0-dev',
+    version=__version__,
     description="Identifies (and optionally removes) stale Pinboard links",
     author="Jon Parise",
     author_email="jon@indelible.org",
