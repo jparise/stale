@@ -103,6 +103,8 @@ def main():
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('-t', '--token', help='your Pinboard API token')
+    parser.add_argument('--ignore', nargs='+', metavar='HOSTNAME',
+                        help="ignore links from these hostnames")
     parser.add_argument('-d', '--delete', action='store_true',
                         help="delete stale links", default=False)
     parser.add_argument('-e', action='store_true', dest='errors',
@@ -116,6 +118,9 @@ def main():
     if not args.token:
         from getpass import getpass
         args.token = getpass('API Token: ')
+
+    if args.ignore:
+        args.ignore = frozenset(hostname.lower() for hostname in args.ignore)
 
     setup_colors()
 
@@ -135,6 +140,14 @@ def main():
     for post in posts:
         url = post['href']
         stale = False
+
+        # If we've been asked to ignore some hosts, parse the URL and check if
+        # it's hostname exists in the set.
+        if args.ignore:
+            parsed = urlparse.urlparse(url)
+            if parsed.hostname.lower() in args.ignore:
+                report('Skip', url)
+                continue
 
         try:
             result = check_url(url)

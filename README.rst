@@ -18,14 +18,17 @@ Usage
 
 ::
 
-    usage: stale.py [-h] [-t TOKEN] [-d] [-e] [-v] [--version]
+    usage: stale.py [-h] [-t TOKEN] [--ignore HOSTNAME [HOSTNAME ...]] [-d] [-e] [-v]
+                    [--version]
 
     Identify (and optionally delete) stale Pinboard links.
 
     optional arguments:
     -h, --help            show this help message and exit
     -t TOKEN, --token TOKEN
-                            your Pinboard API token
+                          your Pinboard API token
+    --ignore HOSTNAME [HOSTNAME ...]
+                          ignore links from these hostnames
     -d, --delete          delete stale links
     -e                    equate errors with staleness
     -v                    enable verbose output
