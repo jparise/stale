@@ -8,9 +8,7 @@ You can grab the latest code package by cloning this repository::
 
     $ git clone https://github.com/jparise/stale.git
 
-... or by downloading the tarball::
-
-    https://github.com/jparise/stale/tarball/master
+... or by downloading the `latest tarball`_.
 
 
 Usage
@@ -38,3 +36,4 @@ You can find your personal Pinboard API token in your `Settings`_.
 
 .. _Pinboard: http://pinboard.in/
 .. _Settings: https://pinboard.in/settings/password
+.. _latest tarball: https://github.com/jparise/stale/tarball/master
