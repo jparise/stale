@@ -42,7 +42,7 @@ USER_AGENT = \
     'Mozilla/5.0 (compatible; stale/{}; +https://github.com/jparise/stale)' \
     .format(__version__)
 
-colors = {'normal': '', 'green': '', 'red': ''}
+COLORS = {'normal': '', 'green': '', 'red': ''}
 
 
 def pinboard_call(path, token, **kwargs):
@@ -84,11 +84,11 @@ def setup_colors():
             pass
 
     if has_colors:
-        global colors
+        global COLORS
         fg = curses.tigetstr('setaf') or curses.tigetstr('setf') or ''
-        colors['normal'] = curses.tigetstr('sgr0')
-        colors['green'] = curses.tparm(fg, 2)
-        colors['red'] = curses.tparm(fg, 1)
+        COLORS['normal'] = curses.tigetstr('sgr0')
+        COLORS['green'] = curses.tparm(fg, 2)
+        COLORS['red'] = curses.tparm(fg, 1)
 
 
 def report(code, url):
@@ -96,7 +96,7 @@ def report(code, url):
         color = 'green'
     else:
         color = 'red'
-    print '{}[{}] {}{}'.format(colors[color], code, colors['normal'], url)
+    print '{}[{}] {}{}'.format(COLORS[color], code, COLORS['normal'], url)
 
 
 def main():
