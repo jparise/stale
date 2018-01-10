@@ -31,7 +31,7 @@ import urlparse
 
 try:
     import curses
-except:
+except ImportError:
     curses = None
 
 __author__ = 'Jon Parise <jon@indelible.org>'
@@ -80,7 +80,7 @@ def setup_colors():
         try:
             curses.setupterm()
             has_colors = curses.tigetnum('colors') > 0
-        except:
+        except Exception:
             pass
 
     if has_colors:
@@ -171,6 +171,7 @@ def main():
                 pinboard_call('posts/delete', token=args.token, url=url)
             except Exception as e:
                 print '> ' + str(e)
+
 
 if __name__ == '__main__':
     main()
