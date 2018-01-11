@@ -24,6 +24,7 @@
 
 import json
 import re
+import ssl
 import sys
 import urllib
 import urllib2
@@ -152,7 +153,7 @@ def main():
             result = check_url(url)
         except KeyboardInterrupt:
             break
-        except IOError as e:
+        except (IOError, ssl.CertificateError) as e:
             report('Err', url)
             print '> ' + str(e).replace('\n', '\n> ')
             if args.errors:
