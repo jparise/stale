@@ -22,6 +22,7 @@
 
 """Identify (and optionally delete) stale Pinboard links."""
 
+import getpass
 import json
 import re
 import ssl
@@ -118,8 +119,10 @@ def main():
     args = parser.parse_args()
 
     if not args.token:
-        from getpass import getpass
-        args.token = getpass('API Token: ')
+        try:
+            args.token = getpass.getpass('API Token: ')
+        except KeyboardInterrupt:
+            sys.exit(0)
 
     setup_colors()
 
