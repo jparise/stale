@@ -22,14 +22,21 @@
 
 """Identify (and optionally delete) stale Pinboard links."""
 
+from __future__ import print_function
+
 import getpass
 import json
 import re
 import ssl
 import sys
-import urllib
-import urllib2
-import urlparse
+
+try:
+    from urllib.parse import urldefrag, urlencode, urlparse, urljoin
+    from urllib.request import Request, urlopen
+except ImportError:
+    from urlparse import urldefrag, urljoin, urlparse
+    from urllib import urlencode
+    from urllib2 import Request, urlopen
 
 try:
     import curses
@@ -53,12 +60,12 @@ def pinboard_call(path, token, **kwargs):
     params['auth_token'] = token
     params['format'] = 'json'
 
-    url = urlparse.urljoin(PINBOARD_API_BASE, path)
-    url += '?' + urllib.urlencode(params)
+    url = urljoin(PINBOARD_API_BASE, path)
+    url += '?' + urlencode(params)
 
-    request = urllib2.Request(url)
+    request = Request(url)
     request.add_header('User-Agent', USER_AGENT)
-    response = urllib2.urlopen(url)
+    response = urlopen(url)
 
     return json.load(response)
 
@@ -66,14 +73,14 @@ def pinboard_call(path, token, **kwargs):
 def check_url(url):
     """Check the given URL by issuring a HEAD request."""
     # We don't want to include a fragment in our request.
-    url, fragment = urlparse.urldefrag(url)
+    url, fragment = urldefrag(url)
 
     # Attempt to open the target URL using a HEAD request.
-    request = urllib2.Request(url)
+    request = Request(url)
     request.get_method = lambda: 'HEAD'
     request.add_header('User-Agent', USER_AGENT)
 
-    return urllib2.urlopen(request)
+    return urlopen(request)
 
 
 def setup_colors():
@@ -98,7 +105,7 @@ def report(code, url):
         color = 'green'
     else:
         color = 'red'
-    print '{}[{}] {}{}'.format(COLORS[color], code, COLORS['normal'], url)
+    print('{}[{}] {}{}'.format(COLORS[color], code, COLORS['normal'], url))
 
 
 def main():
@@ -129,15 +136,15 @@ def main():
     try:
         posts = pinboard_call('posts/all', token=args.token)
     except Exception as e:
-        print "Failed to retrieve posts:", e
+        print("Failed to retrieve posts:", e)
         sys.exit(1)
 
     if not posts:
-        print "No posts were retrieved."
+        print("No posts were retrieved.")
         sys.exit(1)
 
     if args.verbose:
-        print "Checking {} posts ...".format(len(posts))
+        print("Checking {} posts ...".format(len(posts)))
 
     for post in posts:
         url = post['href']
@@ -146,7 +153,7 @@ def main():
         # If we have some hostnames to ignore, parse the URL and check if it
         # matches one of the patterns.
         if args.ignore:
-            parsed = urlparse.urlparse(url)
+            parsed = urlparse(url)
             for pattern in args.ignore:
                 if pattern.match(parsed.hostname):
                     report('Skip', url)
@@ -158,7 +165,7 @@ def main():
             break
         except (IOError, ssl.CertificateError) as e:
             report('Err', url)
-            print '> ' + str(e).replace('\n', '\n> ')
+            print('> ' + str(e).replace('\n', '\n> '))
             if args.errors:
                 stale = True
         else:
@@ -170,11 +177,11 @@ def main():
                 report('OK', url)
 
         if stale and args.delete:
-            print "  Deleting {}".format(url)
+            print("  Deleting {}".format(url))
             try:
                 pinboard_call('posts/delete', token=args.token, url=url)
             except Exception as e:
-                print '> ' + str(e)
+                print('> ' + str(e))
 
 
 if __name__ == '__main__':
