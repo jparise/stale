@@ -24,8 +24,10 @@
 
 from __future__ import print_function
 
+import collections
 import getpass
 import json
+import os
 import re
 import ssl
 import sys
@@ -38,11 +40,6 @@ except ImportError:
     from urllib import urlencode
     from urllib2 import Request, urlopen
 
-try:
-    import curses
-except ImportError:
-    curses = None
-
 __author__ = 'Jon Parise <jon@indelible.org>'
 __version__ = '2.0-dev'
 
@@ -51,7 +48,7 @@ USER_AGENT = \
     'Mozilla/5.0 (compatible; stale/{}; +https://github.com/jparise/stale)' \
     .format(__version__)
 
-COLORS = {'normal': '', 'green': '', 'red': ''}
+COLORS = collections.defaultdict(str)
 
 
 def pinboard_call(path, token, **kwargs):
@@ -83,29 +80,21 @@ def check_url(url):
     return urlopen(request)
 
 
-def setup_colors():
-    has_colors = False
-    if curses and sys.stdout.isatty():
-        try:
-            curses.setupterm()
-            has_colors = curses.tigetnum('colors') > 0
-        except Exception:
-            pass
-
-    if has_colors:
-        global COLORS
-        fg = curses.tigetstr('setaf') or curses.tigetstr('setf') or ''
-        COLORS['normal'] = curses.tigetstr('sgr0')
-        COLORS['green'] = curses.tparm(fg, 2)
-        COLORS['red'] = curses.tparm(fg, 1)
-
-
 def report(code, url):
     if str(code) == 'OK':
         color = 'green'
     else:
         color = 'red'
     print('{}[{}] {}{}'.format(COLORS[color], code, COLORS['normal'], url))
+
+
+def supports_color():
+    # Windows only supports colors if ANSICON is defined.
+    if sys.platform == 'win32' and 'ANSICON' not in os.environ:
+        return False
+
+    # Otherwise, we assume all TTYs support ANSI color.
+    return getattr(sys.stdout, 'isatty', False)
 
 
 def main():
@@ -131,7 +120,11 @@ def main():
         except KeyboardInterrupt:
             sys.exit(0)
 
-    setup_colors()
+    # If the terminal supports ANSI color, set up our color codes.
+    if supports_color():
+        COLORS['normal'] = '\033[0m'
+        COLORS['green'] = '\033[32m'
+        COLORS['red'] = '\033[31m'
 
     try:
         posts = pinboard_call('posts/all', token=args.token)
