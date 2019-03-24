@@ -101,7 +101,8 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('-t', '--token', help='your Pinboard API token')
+    parser.add_argument('-t', '--token',
+                        help="your Pinboard API token ('username:hex-values')")
     parser.add_argument('--ignore', nargs='+', type=re.compile,
                         help="ignore links from these hosts", metavar='REGEX')
     parser.add_argument('-d', '--delete', action='store_true',

@@ -20,7 +20,7 @@ Identify (and optionally delete) stale Pinboard links.
 optional arguments:
 -h, --help            show this help message and exit
 -t TOKEN, --token TOKEN
-                      your Pinboard API token
+                      your Pinboard API token ('username:hex-values')
 --ignore REGEX [REGEX ...]
                       ignore links from these hosts
 -d, --delete          delete stale links
@@ -29,7 +29,8 @@ optional arguments:
 --version             show program's version number and exit
 ```
 
-You can find your personal Pinboard API token in your [Settings][].
+You can find your personal Pinboard API token in your [Settings][]. It will
+look like `<pinboard-username>:<long-string-of-hex-values>`.
 
 [latest tarball]: https://github.com/jparise/stale/tarball/master
 [Settings]: https://pinboard.in/settings/password
