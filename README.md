@@ -32,5 +32,16 @@ optional arguments:
 You can find your personal Pinboard API token in your [Settings][]. It will
 look like `<pinboard-username>:<long-string-of-hex-values>`.
 
+### SSL Certificates
+
+Stale visits each link to verify that it is still active. Because most hosts
+use SSL, it's important for your Python environment to have a current set of
+SSL certificates. Otherwise, the connection attempt might fail with an error
+like `[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed`.
+
+For macOS, you can update your certificates by running this command:
+
+    /Applications/Python\ 3.7/Install\ Certificates.command
+
 [latest tarball]: https://github.com/jparise/stale/tarball/master
 [Settings]: https://pinboard.in/settings/password
