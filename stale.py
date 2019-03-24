@@ -158,7 +158,7 @@ def main():
         except KeyboardInterrupt:
             break
         except (IOError, ssl.CertificateError) as e:
-            report('Err', url)
+            report('!!', url)
             print('> ' + str(e).replace('\n', '\n> '))
             if args.errors:
                 stale = True
