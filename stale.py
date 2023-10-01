@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2010-2019 Jon Parise <jon@indelible.org>
+# Copyright (c) 2010-2023 Jon Parise <jon@indelible.org>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,6 @@
 
 """Identify (and optionally delete) stale Pinboard links."""
 
-from __future__ import print_function
-
 import collections
 import getpass
 import json
@@ -32,13 +30,8 @@ import re
 import ssl
 import sys
 
-try:
-    from urllib.parse import urldefrag, urlencode, urlparse, urljoin
-    from urllib.request import Request, urlopen
-except ImportError:
-    from urlparse import urldefrag, urljoin, urlparse
-    from urllib import urlencode
-    from urllib2 import Request, urlopen
+from urllib.parse import urldefrag, urlencode, urlparse, urljoin
+from urllib.request import Request, urlopen
 
 __author__ = 'Jon Parise <jon@indelible.org>'
 __version__ = '2.0-dev'
@@ -47,9 +40,6 @@ PINBOARD_API_BASE = 'https://api.pinboard.in/v1/'
 USER_AGENT = \
     'Mozilla/5.0 (compatible; stale/{}; +https://github.com/jparise/stale)' \
     .format(__version__)
-
-COLORS = collections.defaultdict(str)
-
 
 def pinboard_call(path, token, **kwargs):
     """Make a Pinboard API request and return a JSON-parsed response."""
@@ -60,8 +50,7 @@ def pinboard_call(path, token, **kwargs):
     url = urljoin(PINBOARD_API_BASE, path)
     url += '?' + urlencode(params)
 
-    request = Request(url)
-    request.add_header('User-Agent', USER_AGENT)
+    request = Request(url, headers={'User-Agent': USER_AGENT})
     response = urlopen(url)
 
     return json.load(response)
@@ -70,22 +59,12 @@ def pinboard_call(path, token, **kwargs):
 def check_url(url):
     """Check the given URL by issuring a HEAD request."""
     # We don't want to include a fragment in our request.
-    url, fragment = urldefrag(url)
+    url, _fragment = urldefrag(url)
 
     # Attempt to open the target URL using a HEAD request.
-    request = Request(url)
-    request.get_method = lambda: 'HEAD'
-    request.add_header('User-Agent', USER_AGENT)
+    request = Request(url, headers={'User-Agent': USER_AGENT}, method='HEAD')
 
     return urlopen(request)
-
-
-def report(code, url):
-    if str(code) == 'OK':
-        color = 'green'
-    else:
-        color = 'red'
-    print('{}[{}] {}{}'.format(COLORS[color], code, COLORS['normal'], url))
 
 
 def supports_color():
@@ -122,10 +101,15 @@ def main():
             sys.exit(0)
 
     # If the terminal supports ANSI color, set up our color codes.
+    colors = collections.defaultdict(str)
     if supports_color():
-        COLORS['normal'] = '\033[0m'
-        COLORS['green'] = '\033[32m'
-        COLORS['red'] = '\033[31m'
+        colors['normal'] = '\033[0m'
+        colors['green'] = '\033[32m'
+        colors['red'] = '\033[31m'
+
+    def report(code: str, url: str):
+        color = 'green' if code == 'OK' else 'red'
+        print('{}[{}] {}{}'.format(colors[color], code, colors['normal'], url))
 
     try:
         posts = pinboard_call('posts/all', token=args.token)
