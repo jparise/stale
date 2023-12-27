@@ -112,7 +112,7 @@ def main():
         print('{}[{}] {}{}'.format(colors[color], code, colors['normal'], url))
 
     try:
-        posts = pinboard_call('posts/all', token=args.token)
+        posts = pinboard_call('posts/all', args.token)
     except Exception as e:
         print("Failed to retrieve posts:", e)
         sys.exit(1)
@@ -157,7 +157,7 @@ def main():
         if stale and args.delete:
             print("  Deleting {}".format(url))
             try:
-                pinboard_call('posts/delete', token=args.token, url=url)
+                pinboard_call('posts/delete', args.token, url=url)
             except Exception as e:
                 print('> ' + str(e))
 
