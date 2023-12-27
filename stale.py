@@ -30,6 +30,7 @@ import re
 import ssl
 import sys
 
+from typing import Optional
 from urllib.parse import urldefrag, urlencode, urlparse, urljoin
 from urllib.request import Request, urlopen
 
@@ -56,7 +57,7 @@ def pinboard_call(path, token, **kwargs):
     return json.load(response)
 
 
-def check_url(url):
+def check_url(url: str, timeout: Optional[float] = None):
     """Check the given URL by issuring a HEAD request."""
     # We don't want to include a fragment in our request.
     url, _fragment = urldefrag(url)
@@ -64,7 +65,7 @@ def check_url(url):
     # Attempt to open the target URL using a HEAD request.
     request = Request(url, headers={'User-Agent': USER_AGENT}, method='HEAD')
 
-    return urlopen(request)
+    return urlopen(request, timeout=timeout)
 
 
 def supports_color():
@@ -79,7 +80,10 @@ def supports_color():
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument('-t', '--token',
                         help="your Pinboard API token ('username:hex-values')")
     parser.add_argument('--ignore', nargs='+', type=re.compile,
@@ -88,6 +92,8 @@ def main():
                         help="delete stale links", default=False)
     parser.add_argument('-e', action='store_true', dest='errors',
                         help="equate errors with staleness", default=False)
+    parser.add_argument('--timeout', type=float, default=5,
+                        help="HTTP connection timeout (in seconds)")
     parser.add_argument('-v', action='store_true', dest='verbose',
                         help="enable verbose output", default=False)
     parser.add_argument('--version', action='version', version=__version__)
@@ -138,7 +144,7 @@ def main():
                     continue
 
         try:
-            result = check_url(url)
+            result = check_url(url, timeout=args.timeout)
         except KeyboardInterrupt:
             break
         except (IOError, ssl.CertificateError) as e:
