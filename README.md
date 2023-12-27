@@ -12,7 +12,7 @@ You can grab the latest code package by cloning this repository:
 ## Usage
 
 ```
-usage: stale.py [-h] [-t TOKEN] [--ignore REGEX [REGEX ...]] [-d] [-e] [--timeout TIMEOUT] [-v] [--version]
+usage: stale.py [-h] [-t TOKEN] [--ignore REGEX [REGEX ...]] [-d] [-e] [--timeout TIMEOUT] [-v] [--debug] [--version]
 
 Identify (and optionally delete) stale Pinboard links.
 
@@ -25,7 +25,8 @@ options:
   -d, --delete          delete stale links (default: False)
   -e                    equate errors with staleness (default: False)
   --timeout TIMEOUT     HTTP connection timeout (in seconds) (default: 5)
-  -v                    enable verbose output (default: False)
+  -v, --verbose         enable verbose output (default: False)
+  --debug               enable debugging output (default: False)
   --version             show program's version number and exit
 ```
 

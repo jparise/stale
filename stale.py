@@ -32,7 +32,7 @@ import sys
 
 from typing import Optional
 from urllib.parse import urldefrag, urlencode, urlparse, urljoin
-from urllib.request import Request, urlopen
+from urllib.request import HTTPHandler, HTTPSHandler, OpenerDirector, Request, build_opener, urlopen
 
 __author__ = 'Jon Parise <jon@indelible.org>'
 __version__ = '2.0-dev'
@@ -57,7 +57,7 @@ def pinboard_call(path, token, **kwargs):
     return json.load(response)
 
 
-def check_url(url: str, timeout: Optional[float] = None):
+def check_url(opener: OpenerDirector, url: str, timeout: Optional[float] = None):
     """Check the given URL by issuring a HEAD request."""
     # We don't want to include a fragment in our request.
     url, _fragment = urldefrag(url)
@@ -65,7 +65,7 @@ def check_url(url: str, timeout: Optional[float] = None):
     # Attempt to open the target URL using a HEAD request.
     request = Request(url, headers={'User-Agent': USER_AGENT}, method='HEAD')
 
-    return urlopen(request, timeout=timeout)
+    return opener.open(request, timeout=timeout)
 
 
 def supports_color():
@@ -94,8 +94,10 @@ def main():
                         help="equate errors with staleness", default=False)
     parser.add_argument('--timeout', type=float, default=5,
                         help="HTTP connection timeout (in seconds)")
-    parser.add_argument('-v', action='store_true', dest='verbose',
-                        help="enable verbose output", default=False)
+    parser.add_argument('-v', '--verbose', action='store_true', default=False,
+                        help="enable verbose output")
+    parser.add_argument('--debug', action='store_true', default=False,
+                        help="enable debugging output")
     parser.add_argument('--version', action='version', version=__version__)
 
     args = parser.parse_args()
@@ -130,6 +132,11 @@ def main():
     if args.verbose:
         print("Checking {} posts ...".format(len(posts)))
 
+    opener = build_opener(
+        HTTPHandler(debuglevel=int(args.debug)),
+        HTTPSHandler(debuglevel=int(args.debug)),
+    )
+
     for post in posts:
         url = post['href']
         stale = False
@@ -144,7 +151,7 @@ def main():
                     continue
 
         try:
-            result = check_url(url, timeout=args.timeout)
+            result = check_url(opener, url, timeout=args.timeout)
         except KeyboardInterrupt:
             break
         except (IOError, ssl.CertificateError) as e:
