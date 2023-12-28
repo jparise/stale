@@ -112,11 +112,12 @@ def main():
     colors = collections.defaultdict(str)
     if supports_color():
         colors['normal'] = '\033[0m'
-        colors['green'] = '\033[32m'
         colors['red'] = '\033[31m'
+        colors['green'] = '\033[32m'
+        colors['yellow'] = '\033[33m'
+        colors['purple'] = '\033[35m'
 
-    def report(code: str, url: str):
-        color = 'green' if code == 'OK' else 'red'
+    def report(code: str, color: str, url: str):
         print('{}[{}] {}{}'.format(colors[color], code, colors['normal'], url))
 
     try:
@@ -147,7 +148,7 @@ def main():
             parsed = urlparse(url)
             for pattern in args.ignore:
                 if pattern.match(parsed.hostname):
-                    report('Skip', url)
+                    report('Skip', 'purple', url)
                     continue
 
         try:
@@ -155,7 +156,10 @@ def main():
         except KeyboardInterrupt:
             break
         except (IOError, ssl.CertificateError) as e:
-            report('!!', url)
+            if isinstance(getattr(e, 'reason', e), TimeoutError):
+                report('Timeout', 'yellow', url)
+                continue
+            report('!!', 'red', url)
             print('> ' + str(e).replace('\n', '\n> '))
             if args.errors:
                 stale = True
@@ -163,9 +167,9 @@ def main():
             code = result.getcode()
             if code / 100 == 4 and code != 403:
                 stale = True
-                report(str(code), url)
+                report(str(code), 'red', url)
             elif args.verbose:
-                report('OK', url)
+                report('OK', 'green', url)
 
         if stale and args.delete:
             print("  Deleting {}".format(url))
