@@ -32,6 +32,7 @@ import sys
 
 from http.client import HTTPResponse
 from typing import Optional
+from urllib.error import HTTPError
 from urllib.parse import urldefrag, urlencode, urlparse, urljoin
 from urllib.request import HTTPHandler, HTTPSHandler, OpenerDirector, Request, build_opener, urlopen
 
@@ -139,6 +140,12 @@ def main():
         HTTPSHandler(debuglevel=int(args.debug)),
     )
 
+    # The set of HTTP client (4xx) errors that we ignore:
+    #
+    #  403: we lack support for sending credentials with our requests for
+    #       sites that require authorization
+    ignored_http_errors = {403}
+
     for post in posts:
         url = post['href']
         stale = False
@@ -157,16 +164,24 @@ def main():
         except KeyboardInterrupt:
             break
         except (IOError, ssl.CertificateError) as e:
+            # Timeouts are considered transient (non-fatal) errors.
             if isinstance(getattr(e, 'reason', e), TimeoutError):
                 report('Timeout', 'yellow', url)
                 continue
+
+            # We allow some HTTP client errors to pass as non-fatal.
+            if isinstance(e, HTTPError) and e.code in ignored_http_errors:
+                report(str(e.code), 'yellow', url)
+                continue
+
+            # All other errors are considered request failures.
             report('!!', 'red', url)
             print('> ' + str(e).replace('\n', '\n> '))
             if args.errors:
                 stale = True
         else:
             code = result.getcode()
-            if (400 <= code < 500) and code != 403:
+            if (400 <= code < 500) and code not in ignored_http_errors:
                 stale = True
                 report(str(code), 'red', url)
             elif args.verbose:
