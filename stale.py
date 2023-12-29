@@ -30,6 +30,7 @@ import re
 import ssl
 import sys
 
+from http.client import HTTPResponse
 from typing import Optional
 from urllib.parse import urldefrag, urlencode, urlparse, urljoin
 from urllib.request import HTTPHandler, HTTPSHandler, OpenerDirector, Request, build_opener, urlopen
@@ -57,7 +58,7 @@ def pinboard_call(path, token, **kwargs):
     return json.load(response)
 
 
-def check_url(opener: OpenerDirector, url: str, timeout: Optional[float] = None):
+def check_url(opener: OpenerDirector, url: str, timeout: Optional[float] = None) -> HTTPResponse:
     """Check the given URL by issuring a HEAD request."""
     # We don't want to include a fragment in our request.
     url, _fragment = urldefrag(url)
