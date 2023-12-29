@@ -166,7 +166,7 @@ def main():
                 stale = True
         else:
             code = result.getcode()
-            if code / 100 == 4 and code != 403:
+            if (400 <= code < 500) and code != 403:
                 stale = True
                 report(str(code), 'red', url)
             elif args.verbose:
