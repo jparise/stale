@@ -23,6 +23,7 @@
 """Identify (and optionally delete) stale Pinboard links."""
 
 import collections
+import enum
 import getpass
 import json
 import os
@@ -43,6 +44,15 @@ PINBOARD_API_BASE = 'https://api.pinboard.in/v1/'
 USER_AGENT = \
     'Mozilla/5.0 (compatible; stale/{}; +https://github.com/jparise/stale)' \
     .format(__version__)
+
+
+class Color(enum.StrEnum):
+    normal = '\033[0m'
+    red = '\033[31m'
+    green = '\033[32m'
+    yellow = '\033[33m'
+    purple = '\033[35m'
+
 
 def pinboard_call(path, token, **kwargs):
     """Make a Pinboard API request and return a JSON-parsed response."""
@@ -110,18 +120,6 @@ def main():
         except KeyboardInterrupt:
             sys.exit(0)
 
-    # If the terminal supports ANSI color, set up our color codes.
-    colors = collections.defaultdict(str)
-    if supports_color():
-        colors['normal'] = '\033[0m'
-        colors['red'] = '\033[31m'
-        colors['green'] = '\033[32m'
-        colors['yellow'] = '\033[33m'
-        colors['purple'] = '\033[35m'
-
-    def report(code: str, color: str, url: str):
-        print('{}[{}] {}{}'.format(colors[color], code, colors['normal'], url))
-
     try:
         posts = pinboard_call('posts/all', args.token)
     except Exception as e:
@@ -134,6 +132,13 @@ def main():
 
     if args.verbose:
         print("Checking {} posts ...".format(len(posts)))
+
+    if supports_color():
+        def report(color: Color, code:str, url: str):
+            print('{}[{}] {}{}'.format(color, code, Color.normal, url))
+    else:
+        def report(color: Color, code:str, url: str):
+            print('[{}] {}'.format(code, url))
 
     opener = build_opener(
         HTTPHandler(debuglevel=int(args.debug)),
@@ -156,7 +161,7 @@ def main():
             parsed = urlparse(url)
             for pattern in args.ignore:
                 if pattern.match(parsed.hostname):
-                    report('Skip', 'purple', url)
+                    report(Color.purple, 'Skip', url)
                     continue
 
         try:
@@ -166,16 +171,16 @@ def main():
         except (IOError, ssl.CertificateError) as e:
             # Timeouts are considered transient (non-fatal) errors.
             if isinstance(getattr(e, 'reason', e), TimeoutError):
-                report('Timeout', 'yellow', url)
+                report(Color.yellow, "Timeout", url)
                 continue
 
             # We allow some HTTP client errors to pass as non-fatal.
             if isinstance(e, HTTPError) and e.code in ignored_http_errors:
-                report(str(e.code), 'yellow', url)
+                report(Color.yellow, str(e.code), url)
                 continue
 
             # All other errors are considered request failures.
-            report('!!', 'red', url)
+            report(Color.red, "!!", url)
             print('> ' + str(e).replace('\n', '\n> '))
             if args.errors:
                 stale = True
@@ -183,9 +188,9 @@ def main():
             code = result.getcode()
             if (400 <= code < 500) and code not in ignored_http_errors:
                 stale = True
-                report(str(code), 'red', url)
+                report(Color.red, str(code), url)
             elif args.verbose:
-                report('OK', 'green', url)
+                report(Color.green, "OK", url)
 
         if stale and args.delete:
             print("  Deleting {}".format(url))
