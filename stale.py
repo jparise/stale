@@ -94,7 +94,7 @@ def supports_color():
         return False
 
     # Otherwise, we assume all TTYs support ANSI color.
-    return getattr(sys.stdout, "isatty", False)
+    return sys.stdout.isatty()
 
 
 def main():
