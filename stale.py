@@ -145,11 +145,12 @@ def main():
         HTTPSHandler(debuglevel=int(args.debug)),
     )
 
-    # The set of HTTP client (4xx) errors that we ignore:
+    # The set of HTTP status codes that we consider indicators of "staleness"
+    # includes all client errors (4xx) except for:
     #
     #  403: we lack support for sending credentials with our requests for
     #       sites that require authorization
-    ignored_http_errors = {403}
+    stale_codes = frozenset(range(400, 499)) - {403}
 
     for post in posts:
         url = post['href']
@@ -168,15 +169,13 @@ def main():
             result = check_url(opener, url, timeout=args.timeout)
         except KeyboardInterrupt:
             break
+        except HTTPError as e:
+            stale = e.code in stale_codes
+            report(Color.red if stale else Color.purple, str(e.code), url)
         except (IOError, ssl.CertificateError) as e:
             # Timeouts are considered transient (non-fatal) errors.
             if isinstance(getattr(e, 'reason', e), TimeoutError):
                 report(Color.yellow, "Timeout", url)
-                continue
-
-            # We allow some HTTP client errors to pass as non-fatal.
-            if isinstance(e, HTTPError) and e.code in ignored_http_errors:
-                report(Color.yellow, str(e.code), url)
                 continue
 
             # All other errors are considered request failures.
@@ -186,7 +185,7 @@ def main():
                 stale = True
         else:
             code = result.getcode()
-            if (400 <= code < 500) and code not in ignored_http_errors:
+            if code in stale_codes:
                 stale = True
                 report(Color.red, str(code), url)
             elif args.verbose:
