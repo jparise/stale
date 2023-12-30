@@ -117,17 +117,17 @@ def main():
         try:
             args.token = getpass.getpass('API Token: ')
         except KeyboardInterrupt:
-            sys.exit(0)
+            return 0
 
     try:
         posts = pinboard_call('posts/all', args.token)
     except Exception as e:
         print("Failed to retrieve posts:", e)
-        sys.exit(1)
+        return 1
 
     if not posts:
         print("No posts were retrieved.")
-        sys.exit(1)
+        return 1
 
     if args.verbose:
         print(f"Checking {len(posts)} posts ...")
@@ -199,4 +199,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
