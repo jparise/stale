@@ -63,7 +63,7 @@ def pinboard_call(path, token, **kwargs):
     url += '?' + urlencode(params)
 
     request = Request(url, headers={'User-Agent': USER_AGENT})
-    response = urlopen(url)
+    response = urlopen(request)
 
     return json.load(response)
 
