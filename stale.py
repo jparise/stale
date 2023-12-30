@@ -39,9 +39,9 @@ __author__ = 'Jon Parise <jon@indelible.org>'
 __version__ = '2.0-dev'
 
 PINBOARD_API_BASE = 'https://api.pinboard.in/v1/'
-USER_AGENT = \
-    'Mozilla/5.0 (compatible; stale/{}; +https://github.com/jparise/stale)' \
-    .format(__version__)
+USER_AGENT = (
+    f"Mozilla/5.0 (compatible; stale/{__version__}; +https://github.com/jparise/stale)"
+)
 
 
 class Color(enum.StrEnum):
@@ -130,14 +130,14 @@ def main():
         sys.exit(1)
 
     if args.verbose:
-        print("Checking {} posts ...".format(len(posts)))
+        print(f"Checking {len(posts)} posts ...")
 
     if supports_color():
         def report(color: Color, code:str, url: str):
-            print('{}[{}] {}{}'.format(color, code, Color.normal, url))
+            print(f"{color}[{code}] {Color.normal}{url}")
     else:
         def report(color: Color, code:str, url: str):
-            print('[{}] {}'.format(code, url))
+            print(f"[{code}] {url}")
 
     opener = build_opener(
         HTTPHandler(debuglevel=int(args.debug)),
@@ -191,7 +191,7 @@ def main():
                 report(Color.green, "OK", url)
 
         if stale and args.delete:
-            print("  Deleting {}".format(url))
+            print(f"  Deleting {url}")
             try:
                 pinboard_call('posts/delete', args.token, url=url)
             except Exception as e:
