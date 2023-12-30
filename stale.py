@@ -51,6 +51,7 @@ class Color(enum.StrEnum):
     green = '\033[32m'
     yellow = '\033[33m'
     purple = '\033[35m'
+    cyan = '\033[36m'
 
 
 def pinboard_call(path, token, **kwargs):
@@ -160,7 +161,7 @@ def main():
             parsed = urlparse(url)
             for pattern in args.ignore:
                 if pattern.match(parsed.hostname):
-                    report(Color.purple, 'Skip', url)
+                    report(Color.cyan, 'Skip', url)
                     continue
 
         try:
