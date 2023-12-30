@@ -22,7 +22,6 @@
 
 """Identify (and optionally delete) stale Pinboard links."""
 
-import collections
 import enum
 import getpass
 import json
