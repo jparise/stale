@@ -150,15 +150,11 @@ def main():
     if args.verbose:
         print(f"Checking {len(posts)} posts ...")
 
-    if supports_color():
-
-        def report(color: Color, code: str, url: str):
-            print(f"{color}[{code}] {Color.normal}{url}")
-
-    else:
-
-        def report(color: Color, code: str, url: str):
-            print(f"[{code}] {url}")
+    def report(color: Color, code: str, url: str, colorize=supports_color()):
+        print(
+            f"{color if colorize else ''}[{code}] "
+            f"{Color.normal if colorize else ''}{url}"
+        )
 
     opener = build_opener(
         HTTPHandler(debuglevel=int(args.debug)),
