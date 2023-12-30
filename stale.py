@@ -100,14 +100,14 @@ def main():
     parser.add_argument('--ignore', nargs='+', type=re.compile,
                         help="ignore links from these hosts", metavar='REGEX')
     parser.add_argument('-d', '--delete', action='store_true',
-                        help="delete stale links", default=False)
+                        help="delete stale links")
     parser.add_argument('-e', action='store_true', dest='errors',
-                        help="equate errors with staleness", default=False)
+                        help="equate errors with staleness")
     parser.add_argument('--timeout', type=float, default=5,
                         help="HTTP connection timeout (in seconds)")
-    parser.add_argument('-v', '--verbose', action='store_true', default=False,
+    parser.add_argument('-v', '--verbose', action='store_true',
                         help="enable verbose output")
-    parser.add_argument('--debug', action='store_true', default=False,
+    parser.add_argument('--debug', action='store_true',
                         help="enable debugging output")
     parser.add_argument('--version', action='version', version=__version__)
 
