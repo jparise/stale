@@ -27,7 +27,6 @@ import getpass
 import json
 import os
 import re
-import ssl
 import sys
 
 from http.client import HTTPResponse
@@ -172,7 +171,7 @@ def main():
         except HTTPError as e:
             stale = e.code in stale_codes
             report(Color.red if stale else Color.purple, str(e.code), url)
-        except (IOError, ssl.CertificateError) as e:
+        except OSError as e:
             # Timeouts are considered transient (non-fatal) errors.
             if isinstance(getattr(e, 'reason', e), TimeoutError):
                 report(Color.yellow, "Timeout", url)
