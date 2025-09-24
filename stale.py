@@ -89,6 +89,12 @@ def check_url(
 
 
 def supports_color():
+    # https://bixense.com/clicolors/
+    if os.environ.get('NO_COLOR'):
+        return False
+    elif os.environ.get('CLICOLOR_FORCE'):
+            return True
+
     # Windows only supports colors if ANSICON is defined.
     if sys.platform == "win32" and "ANSICON" not in os.environ:
         return False
